@@ -296,11 +296,6 @@ namespace TwitchLib.Client
         /// </summary>
         public event EventHandler<OnReconnectedEventArgs> OnReconnected;
 
-        /// <summary>
-        /// Fires when an attemp to recconect is made.
-        /// </summary> 
-        public event EventHandler<OnNeedsToReconnectEventArgs> OnNeedsToReconnect;
-
         /// <summary>Fires when TwitchClient attempts to host a channel it is in.</summary>
         public EventHandler OnSelfRaidError;
 
@@ -384,7 +379,6 @@ namespace TwitchLib.Client
             _client.OnMessageThrottled += _client_OnMessageThrottled;
             _client.OnWhisperThrottled += _client_OnWhisperThrottled;
             _client.OnReconnected += _client_OnReconnected;
-            _client.OnNeedsToReconnect += _client_OnNeedsToReconnect;
         }
 
         #endregion
@@ -693,10 +687,6 @@ namespace TwitchLib.Client
             OnReconnected?.Invoke(sender, e);
         }
         
-        private void _client_OnNeedsToReconnect(object sender, OnNeedsToReconnectEventArgs e)
-        {
-            OnNeedsToReconnect?.Invoke(sender, e);
-        }
 
         private void _client_OnMessage(object sender, OnMessageEventArgs e)
         {
