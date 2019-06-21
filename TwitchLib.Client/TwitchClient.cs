@@ -379,6 +379,7 @@ namespace TwitchLib.Client
             _client.OnMessageThrottled += _client_OnMessageThrottled;
             _client.OnWhisperThrottled += _client_OnWhisperThrottled;
             _client.OnReconnected += _client_OnReconnected;
+            _client.OnError += _client_OnError;
         }
 
         #endregion
@@ -434,7 +435,7 @@ namespace TwitchLib.Client
             _lastMessageSent = message;
 
 
-            _client.Send(twitchMessage.ToString());
+            SendRaw(twitchMessage.ToString());
         }
 
         /// <summary>
@@ -623,7 +624,7 @@ namespace TwitchLib.Client
             Log($"Leaving channel: {channel}");
             var joinedChannel = _joinedChannelManager.GetJoinedChannel(channel);
             if (joinedChannel != null)
-                _client.Send(Rfc2812.Part($"#{channel}"));
+                SendRaw(Rfc2812.Part($"#{channel}"));
         }
 
         public void LeaveRoom(string channelId, string roomId)
@@ -633,7 +634,7 @@ namespace TwitchLib.Client
             Log($"Leaving channel: {room}");
             var joinedChannel = _joinedChannelManager.GetJoinedChannel(room);
             if (joinedChannel != null)
-                _client.Send(Rfc2812.Part($"#{room}"));
+                SendRaw(Rfc2812.Part($"#{room}"));
         }
 
         /// <summary>
@@ -686,7 +687,11 @@ namespace TwitchLib.Client
         {
             OnReconnected?.Invoke(sender, e);
         }
-        
+
+        private void _client_OnError(object sender, OnErrorEventArgs e)
+        {
+            OnError?.Invoke(sender, e);
+        }
 
         private void _client_OnMessage(object sender, OnMessageEventArgs e)
         {
@@ -705,13 +710,13 @@ namespace TwitchLib.Client
 
         private void _client_OnConnected(object sender, object e)
         {
-            _client.Send(Rfc2812.Pass(ConnectionCredentials.TwitchOAuth));
-            _client.Send(Rfc2812.Nick(ConnectionCredentials.TwitchUsername));
-            _client.Send(Rfc2812.User(ConnectionCredentials.TwitchUsername, 0, ConnectionCredentials.TwitchUsername));
+            SendRaw(Rfc2812.Pass(ConnectionCredentials.TwitchOAuth));
+            SendRaw(Rfc2812.Nick(ConnectionCredentials.TwitchUsername));
+            SendRaw(Rfc2812.User(ConnectionCredentials.TwitchUsername, 0, ConnectionCredentials.TwitchUsername));
 
-            _client.Send("CAP REQ twitch.tv/membership");
-            _client.Send("CAP REQ twitch.tv/commands");
-            _client.Send("CAP REQ twitch.tv/tags");
+            SendRaw("CAP REQ twitch.tv/membership");
+            SendRaw("CAP REQ twitch.tv/commands");
+            SendRaw("CAP REQ twitch.tv/tags");
 
             if (_autoJoinChannel != null)
             {
@@ -731,7 +736,7 @@ namespace TwitchLib.Client
                 var channelToJoin = _joinChannelQueue.Dequeue();
                 Log($"Joining channel: {channelToJoin.Channel}");
                 // important we set channel to lower case when sending join message
-                _client.Send(Rfc2812.Join($"#{channelToJoin.Channel.ToLower()}"));
+                SendRaw(Rfc2812.Join($"#{channelToJoin.Channel.ToLower()}"));
                 _joinedChannelManager.AddJoinedChannel(new JoinedChannel(channelToJoin.Channel));
                 StartJoinedChannelTimer(channelToJoin.Channel);
             }
@@ -1201,7 +1206,7 @@ namespace TwitchLib.Client
         public void SendQueuedItem(string message)
         {
             if (!IsInitialized) HandleNotInitialized();
-            _client.Send(message);
+            SendRaw(message);
         }
 
         protected static void HandleNotInitialized()
